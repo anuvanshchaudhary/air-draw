@@ -1,0 +1,14 @@
+# Python build/cache artifacts
+__pycache__/
+*.pyc
+
+# Local saves / exports
+saves/
+
+# Large model assets
+hand_landmarker.task
+
+# IDE configurations
+.vscode/
+.idea/
+.antigravityignore
