@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Canvas 🎨✨ | Live Interactive Web Demo</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS Style Sheets -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- MediaPipe CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Menu Bar -->
+        <header class="top-bar" id="topBar">
+            <div class="menu-section controls">
+                <button class="btn action-btn" id="btnClear">CLEAR</button>
+                <button class="btn action-btn" id="btnUndo">UNDO</button>
+                <button class="btn action-btn" id="btnRedo">REDO</button>
+                
+                <div class="brush-size-group">
+                    <button class="btn size-btn" id="btnSizeDec">-</button>
+                    <div class="size-indicator-widget" id="sizeIndicatorWidget">
+                        <div class="size-dot" id="sizeDot"></div>
+                        <span class="size-text" id="sizeText">5px</span>
+                    </div>
+                    <button class="btn size-btn" id="btnSizeInc">+</button>
+                </div>
+                
+                <button class="btn action-btn active" id="btnOverlay">OVERLAY</button>
+                <button class="btn action-btn" id="btnSave">SAVE</button>
+            </div>
+            
+            <div class="menu-section color-palette" id="colorPalette">
+                <!-- Color swatches will be populated dynamically -->
+            </div>
+        </header>
+
+        <!-- Main Split Screen Layout -->
+        <main class="split-layout">
+            <!-- Left Pane: Mirrored Webcam Feed -->
+            <div class="pane left-pane">
+                <video class="webcam-video" id="webcamVideo" autoplay playsinline muted></video>
+                <canvas class="overlay-canvas" id="uiOverlayCanvas"></canvas>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <p>Initializing MediaPipe Hand Tracking...</p>
+                </div>
+            </div>
+
+            <!-- Right Pane: Drawing Canvas -->
+            <div class="pane right-pane">
+                <canvas class="drawing-canvas" id="drawingCanvas"></canvas>
+            </div>
+        </main>
+
+        <!-- Floating HUDs -->
+        <!-- Gesture Status pill -->
+        <div class="floating-hud gesture-hud" id="gestureHud">
+            <span class="hud-status-dot" id="hudStatusDot"></span>
+            <span class="hud-text" id="hudGestureText">MODE: ---</span>
+        </div>
+
+        <!-- FPS Pill -->
+        <div class="floating-hud fps-hud" id="fpsHud">
+            <span class="hud-status-dot green" id="fpsDot"></span>
+            <span class="hud-text" id="fpsText">30 FPS</span>
+        </div>
+
+        <!-- Doodle Recognition card -->
+        <div class="doodle-recognition-card" id="doodleCard">
+            <span id="doodleLabel">Detected: Circle ⭕</span>
+        </div>
+
+        <!-- Saved success notification card -->
+        <div class="save-success-card" id="saveSuccessCard">
+            <div class="success-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <span>Canvas Saved!</span>
+        </div>
+    </div>
+
+    <!-- Main JavaScript Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
