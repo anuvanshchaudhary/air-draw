@@ -147,7 +147,7 @@ function setEraserMode(active) {
 
 // --- Setup MediaPipe Hands ---
 const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
 });
 
 hands.setOptions({
@@ -162,13 +162,23 @@ hands.onResults(onHandResults);
 // Start camera stream
 const camera = new Camera(videoElement, {
     onFrame: async () => {
-        await hands.send({ image: videoElement });
+        if (videoElement.currentTime > 0 && !videoElement.paused && !videoElement.ended && videoElement.readyState >= 2) {
+            try {
+                await hands.send({ image: videoElement });
+            } catch (err) {
+                console.warn("MediaPipe frame send error:", err);
+            }
+        }
     },
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT
 });
 
 camera.start().then(() => {
+    loadingOverlay.style.opacity = "0";
+    setTimeout(() => loadingOverlay.style.display = "none", 500);
+}).catch(err => {
+    console.error("Camera start error:", err);
     loadingOverlay.style.opacity = "0";
     setTimeout(() => loadingOverlay.style.display = "none", 500);
 });
@@ -178,25 +188,24 @@ function distance(p1, p2) {
     return Math.hypot(p2.x - p1.x, p2.y - p1.y);
 }
 
-// Check if a finger is extended (compared to MCP joint)
-function isFingerUp(landmarks, tipId, mcpId) {
-    return landmarks[tipId].y < landmarks[mcpId].y;
+// Check if a finger is extended (distance from wrist to tip > distance from wrist to PIP joint, or vertical position)
+function isFingerUp(landmarks, tipId, pipId) {
+    const wrist = landmarks[0];
+    const tip = landmarks[tipId];
+    const pip = landmarks[pipId];
+    const distTip = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+    const distPip = Math.hypot(pip.x - wrist.x, pip.y - wrist.y);
+    return distTip > distPip * 1.05 || tip.y < pip.y;
 }
 
-// Check if thumb is extended horizontally
+// Check if thumb is extended
 function isThumbUp(landmarks) {
     const wrist = landmarks[0];
-    const mcp = landmarks[9];
     const tip = landmarks[4];
-    const ip = landmarks[3];
-    
-    if (wrist.x < mcp.x) {
-        // Mirrored right hand: thumb tip left of IP joint
-        return tip.x < ip.x;
-    } else {
-        // Mirrored left hand: thumb tip right of IP joint
-        return tip.x > ip.x;
-    }
+    const mcp = landmarks[2];
+    const distTip = Math.hypot(tip.x - wrist.x, tip.y - wrist.y);
+    const distMcp = Math.hypot(mcp.x - wrist.x, mcp.y - wrist.y);
+    return distTip > distMcp * 1.1;
 }
 
 // Temporal majority vote for gesture stability
@@ -671,12 +680,12 @@ function onHandResults(results) {
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
         
-        // Get finger up states
+        // Get finger up states (passing tipId and pipId for PIP-relative robust detection)
         const thumbUp = isThumbUp(landmarks);
-        const indexUp = isFingerUp(landmarks, 8, 5);
-        const middleUp = isFingerUp(landmarks, 12, 9);
-        const ringUp = isFingerUp(landmarks, 16, 13);
-        const pinkyUp = isFingerUp(landmarks, 20, 17);
+        const indexUp = isFingerUp(landmarks, 8, 6);
+        const middleUp = isFingerUp(landmarks, 12, 10);
+        const ringUp = isFingerUp(landmarks, 16, 14);
+        const pinkyUp = isFingerUp(landmarks, 20, 18);
         
         const nonThumbFingersUp = [indexUp, middleUp, ringUp, pinkyUp].filter(Boolean).length;
         
@@ -1147,4 +1156,67 @@ document.querySelectorAll(".swatch").forEach(sw => {
     sw.addEventListener("click", (e) => {
         handleButtonClick(e.target.dataset.colorName);
     });
+});
+
+// --- Mouse and Touch Fallback Drawing for Canvas ---
+let isMouseDrawing = false;
+
+function getCanvasCoords(e) {
+    const rect = drawingCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: Math.floor(((clientX - rect.left) / rect.width) * CANVAS_WIDTH),
+        y: Math.floor(((clientY - rect.top) / rect.height) * CANVAS_HEIGHT)
+    };
+}
+
+drawingCanvas.addEventListener("mousedown", (e) => {
+    isMouseDrawing = true;
+    activeStrokePoints = [];
+    smoothingBuffer = [];
+    const pt = getCanvasCoords(e);
+    addSmoothedPoint(pt.x, pt.y);
+    redrawCanvas();
+});
+
+drawingCanvas.addEventListener("mousemove", (e) => {
+    if (!isMouseDrawing) return;
+    const pt = getCanvasCoords(e);
+    addSmoothedPoint(pt.x, pt.y);
+    redrawCanvas();
+});
+
+window.addEventListener("mouseup", () => {
+    if (isMouseDrawing) {
+        isMouseDrawing = false;
+        commitActiveStroke();
+        redrawCanvas();
+    }
+});
+
+drawingCanvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    isMouseDrawing = true;
+    activeStrokePoints = [];
+    smoothingBuffer = [];
+    const pt = getCanvasCoords(e);
+    addSmoothedPoint(pt.x, pt.y);
+    redrawCanvas();
+}, { passive: false });
+
+drawingCanvas.addEventListener("touchmove", (e) => {
+    if (!isMouseDrawing) return;
+    e.preventDefault();
+    const pt = getCanvasCoords(e);
+    addSmoothedPoint(pt.x, pt.y);
+    redrawCanvas();
+}, { passive: false });
+
+window.addEventListener("touchend", () => {
+    if (isMouseDrawing) {
+        isMouseDrawing = false;
+        commitActiveStroke();
+        redrawCanvas();
+    }
 });
