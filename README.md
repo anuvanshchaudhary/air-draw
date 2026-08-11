@@ -37,9 +37,12 @@ Control your canvas naturally using hand tracking:
 * **Erase Mode 🖐️** (*Index + Middle + Ring up*): Erase parts of your drawing with a thick brush.
 * **Fist Hold (Clear) ✊** (*Fist held for 2 seconds*): Clear the entire canvas. A **Dual-Sided Clear HUD** shows a circular progress indicator around your wrist (left screen) and a larger progress indicator in the center of the drawing canvas (right screen).
 
-### 2. Premium 50-50 Split Screen Layout
-* **Left Screen (Webcam Feed)**: Displays your mirrored camera input overlayed with tracked hand landmarks, top bar controls, gesture mode indicators, and FPS logs.
-* **Right Screen (Drawing Canvas)**: Shows your artwork in full size on a dark drawing canvas.
+### 2. Multi-Mode Responsive Layout & Uncropped HD Capture
+* **720p HD Full Field-of-View**: Captures at 1280x720 HD resolution to preserve your full upper body, arms, and background without top/bottom cropping.
+* **View Modes (`V` key)**: Seamlessly cycle between:
+  1. **Full Camera AR View (Default)**: Your webcam feed fills 100% of the screen height with glowing drawings overlaid in real-time, plus a live **Mini Canvas Preview** card in the bottom-right corner.
+  2. **Split View**: Classic 50-50 side-by-side layout featuring camera feed on the left and full canvas on the right.
+  3. **Full Canvas View**: Canvas fills 100% of the screen height with a live **Mini Webcam Preview** card in the corner.
 
 ### 3. Magical Neon Glow & Sparkle Effects
 * **Neon Glow Paint**: Strokes are rendered as multilayered neon light tubes featuring a thick outer glow, medium inner glow, and a high-contrast core line.
@@ -59,6 +62,7 @@ Control your canvas naturally using hand tracking:
 * **Performance FPS Monitor**: An elegant status pill in the top-right that color-codes your frame rate (Green for >=20 FPS, Orange for 10-19 FPS, Red for <10 FPS).
 * **Doodle Recognition Card ⭐**: Renders a top-center floating glass card displaying the recognized doodle name and emoji (e.g., "Detected: Star ⭐", "Detected: Heart ❤️", "Detected: Triangle 🔺", "Detected: Line 📏") for 2.0 seconds after pen-up.
 * **Glassmorphic Save Notification**: A centered card showing a success checkmark when your drawing is saved.
+* **Live Thumbnail Previews**: Picture-in-picture mini cards displaying live canvas and webcam streams.
 
 ### 6. Automated Shape & Line Snapping
 * Analyzes your stroke path when a drawing gesture ends.
@@ -75,6 +79,8 @@ Press **S** on your keyboard (or click the Save button in the Web demo) to expor
 
 | Key | Action |
 | --- | --- |
+| `V` | Cycle View Modes (Full Camera AR / Split 50-50 / Full Canvas) |
+| `O` | Toggle AR drawing overlay on camera feed |
 | `S` | Export drawing and composite image |
 | `Ctrl + Z` | Undo last stroke |
 | `Ctrl + Y` | Redo last undone stroke |
