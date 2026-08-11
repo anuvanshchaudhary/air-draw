@@ -159,13 +159,19 @@ hands.setOptions({
 
 hands.onResults(onHandResults);
 
+let isOverlayHidden = false;
 function hideLoadingOverlay() {
-    if (!loadingOverlay) return;
+    if (!loadingOverlay || isOverlayHidden) return;
+    isOverlayHidden = true;
     loadingOverlay.style.opacity = "0";
+    loadingOverlay.style.pointerEvents = "none";
     setTimeout(() => {
         loadingOverlay.style.display = "none";
     }, 500);
 }
+
+// Safety fallback: dismiss loading overlay after 2.5 seconds maximum
+setTimeout(hideLoadingOverlay, 2500);
 
 // Start camera stream with flexible resolution constraints to prevent OverconstrainedError on webcams/mobile
 async function initWebcam() {
@@ -702,6 +708,8 @@ function redrawCanvas() {
 
 // --- MediaPipe hand tracking frame results loop ---
 function onHandResults(results) {
+    hideLoadingOverlay();
+
     // 1. Calculate FPS
     frameCount++;
     const now = performance.now();
