@@ -566,16 +566,17 @@ class UIManager:
         # Apply the blended drawing pixels only where the mask is active
         np.copyto(frame, blended, where=(mask_3ch == 255))
 
-    def draw_mini_preview(self, frame, canvas):
+    def draw_mini_preview(self, target_img, source_img, label="CANVAS PREVIEW"):
         """
-        Draw a small thumbnail of the canvas in the bottom-right corner.
+        Draw a small thumbnail of source_img in the bottom-right corner of target_img.
 
         Args:
-            frame: Main display frame to overlay onto.
-            canvas: The drawing canvas (black background).
+            target_img: Main display frame to overlay onto.
+            source_img: Image to resize and render as a thumbnail.
+            label: Text label displayed above preview card.
         """
-        h, w = frame.shape[:2]
-        preview = cv2.resize(canvas, (self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
+        h, w = target_img.shape[:2]
+        preview = cv2.resize(source_img, (self.PREVIEW_WIDTH, self.PREVIEW_HEIGHT))
 
         # Position in bottom-right
         x1 = w - self.PREVIEW_WIDTH - self.PREVIEW_MARGIN
@@ -587,23 +588,23 @@ class UIManager:
         card_x1, card_y1 = x1 - 10, y1 - 25
         card_x2, card_y2 = x2 + 10, y2 + 10
         
-        overlay = frame.copy()
+        overlay = target_img.copy()
         self.draw_rounded_rect(overlay, (card_x1, card_y1), (card_x2, card_y2), (20, 20, 20), 12, -1)
-        cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
-        self.draw_rounded_rect(frame, (card_x1, card_y1), (card_x2, card_y2), (80, 80, 80), 12, 1)
+        cv2.addWeighted(overlay, 0.7, target_img, 0.3, 0, target_img)
+        self.draw_rounded_rect(target_img, (card_x1, card_y1), (card_x2, card_y2), (80, 80, 80), 12, 1)
 
         # Label above preview
         cv2.putText(
-            frame, "CANVAS PREVIEW",
+            target_img, label,
             (x1, y1 - 8),
             cv2.FONT_HERSHEY_SIMPLEX, 0.35, (200, 200, 200), 1, cv2.LINE_AA
         )
 
         # Draw a clean border around the actual thumbnail
-        cv2.rectangle(frame, (x1 - 1, y1 - 1), (x2 + 1, y2 + 1), (100, 100, 100), 1)
+        cv2.rectangle(target_img, (x1 - 1, y1 - 1), (x2 + 1, y2 + 1), (100, 100, 100), 1)
 
         # Overlay the preview
-        frame[y1:y2, x1:x2] = preview
+        target_img[y1:y2, x1:x2] = preview
 
     def update_fps(self):
         """Update FPS calculation. Call once per frame."""

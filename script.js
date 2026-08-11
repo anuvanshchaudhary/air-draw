@@ -170,8 +170,8 @@ const camera = new Camera(videoElement, {
             }
         }
     },
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT
+    width: 1280,
+    height: 720
 });
 
 camera.start().then(() => {

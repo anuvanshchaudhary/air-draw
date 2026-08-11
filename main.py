@@ -75,18 +75,21 @@ def main():
         print("Error: Could not open webcam.")
         return
 
-    # Request widescreen resolution at a highly optimized, high-FPS scale
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+    # Request 720p HD resolution to preserve full uncropped camera field-of-view
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
     tracker = HandTracker()
     canvas_mgr = CanvasManager()
     ui = UIManager()
     doodle_classifier = DoodleClassifier()
 
-    # Create resizable window with aspect ratio constraints
+    # View Modes: "camera" (full screen webcam + drawing overlay), "split" (side-by-side), "canvas" (full canvas)
+    view_modes = ["camera", "split", "canvas"]
+    view_mode_idx = 0
+
+    # Create resizable window without aspect ratio locking so it can fill 100% of the screen height
     cv2.namedWindow("Air Canvas", cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty("Air Canvas", cv2.WND_PROP_ASPECT_RATIO, cv2.WINDOW_KEEPRATIO)
 
     # Doodle recognition display state
     current_doodle_label = None
@@ -104,6 +107,8 @@ def main():
     print("  Index + Middle + Ring:  Erase")
     print("  Fist (2 sec hold):     Clear canvas")
     print("  S key:                 Save drawing")
+    print("  V key:                 Toggle View Mode (Full Camera / Split / Full Canvas)")
+    print("  O key:                 Toggle AR Overlay on camera")
     print("  Ctrl+Z / Ctrl+Y:       Undo / Redo")
 
     while True:
@@ -197,14 +202,14 @@ def main():
         # --- Render canvas ---
         canvas = canvas_mgr.render(w, h)
 
-        # --- Draw UI overlays on the canvas (right side) ---
+        # --- Draw UI overlays on the canvas ---
         if current_doodle_label:
             if time.time() - doodle_recognized_time < 2.0:
                 ui.draw_doodle_recognition(canvas, current_doodle_label)
             else:
                 current_doodle_label = None
 
-        # --- Draw UI overlays directly on the camera frame (left side) ---
+        # --- Draw UI overlays directly on the camera frame ---
         ui.overlay_artwork(frame, canvas)
         tracker.draw_landmarks(frame)
         ui.draw_top_bar(frame, index_tip if gesture == HandTracker.GESTURE_HOVER else None)
@@ -224,8 +229,19 @@ def main():
             ui.draw_fist_progress(frame, fist_progress, wrist)
             ui.draw_canvas_fist_progress(canvas, fist_progress)
 
-        # --- Side-by-side layout: stack frame (with UI) and canvas horizontally ---
-        display = np.hstack([frame, canvas])
+        # --- Layout selection based on View Mode ---
+        mode = view_modes[view_mode_idx]
+        if mode == "camera":
+            # Primary mode: Full-window camera view with drawing overlay & mini canvas preview
+            ui.draw_mini_preview(frame, canvas, "CANVAS PREVIEW")
+            display = frame
+        elif mode == "split":
+            # Side-by-side split mode
+            display = np.hstack([frame, canvas])
+        else:  # "canvas"
+            # Full drawing canvas with mini webcam preview
+            ui.draw_mini_preview(canvas, clean_frame, "WEBCAM PREVIEW")
+            display = canvas
 
         # --- Display ---
         cv2.imshow("Air Canvas", display)
@@ -241,6 +257,10 @@ def main():
             c_path, comp_path = save_canvas(canvas_only, clean_frame)
             ui.trigger_save_notification()
             print(f"Saved: {c_path}, {comp_path}")
+
+        elif key == ord('v') or key == ord('V'):
+            view_mode_idx = (view_mode_idx + 1) % len(view_modes)
+            print(f"View Mode changed to: {view_modes[view_mode_idx].upper()}")
 
         elif key == ord('o') or key == ord('O'):
             ui.show_overlay = not ui.show_overlay
