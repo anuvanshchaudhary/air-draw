@@ -862,15 +862,15 @@ function onHandResults(results) {
             // Draw hover sizing indicator
             drawBrushIndicatorCircle(uiCtx, ix, iy);
             
-            // Get size indicator element bounding client rect relative to canvas container
+            // Get size indicator element bounding client rect relative to top bar container
             const sizeWidgetRect = sizeIndicatorWidget.getBoundingClientRect();
-            const canvasRect = drawingCanvas.getBoundingClientRect();
+            const topBarRect = topBar.getBoundingClientRect();
             
             // Map widget coordinate bounds to 640x360 coordinate space
-            const wx1 = ((sizeWidgetRect.left - canvasRect.left) / canvasRect.width) * CANVAS_WIDTH;
-            const wy1 = ((sizeWidgetRect.top - canvasRect.top) / canvasRect.height) * CANVAS_HEIGHT;
-            const wx2 = wx1 + (sizeWidgetRect.width / canvasRect.width) * CANVAS_WIDTH;
-            const wy2 = wy1 + (sizeWidgetRect.height / canvasRect.height) * CANVAS_HEIGHT;
+            const wx1 = ((sizeWidgetRect.left - topBarRect.left) / topBarRect.width) * CANVAS_WIDTH;
+            const wy1 = ((sizeWidgetRect.top - topBarRect.top) / topBarRect.height) * 80;
+            const wx2 = wx1 + (sizeWidgetRect.width / topBarRect.width) * CANVAS_WIDTH;
+            const wy2 = wy1 + (sizeWidgetRect.height / topBarRect.height) * 80;
             
             if (ix >= wx1 && ix <= wx2 && iy >= wy1 && iy <= wy2) {
                 // Pinch to resize brush dynamically
@@ -1037,7 +1037,10 @@ function commitActiveStroke() {
 function checkTopBarClick(ix, iy) {
     if (iy > 80) return null; // Bar height is 80px
     
-    // Map button bounds dynamically by element bounding rects
+    const topBarRect = topBar.getBoundingClientRect();
+    if (topBarRect.width <= 0) return null;
+
+    // Map button bounds dynamically by element bounding rects relative to full header bar width
     const buttons = [
         { id: "btnClear", el: btnClear },
         { id: "btnUndo", el: btnUndo },
@@ -1048,14 +1051,12 @@ function checkTopBarClick(ix, iy) {
         { id: "btnSave", el: btnSave }
     ];
     
-    const canvasRect = drawingCanvas.getBoundingClientRect();
-    
     for (let btn of buttons) {
         const r = btn.el.getBoundingClientRect();
-        const bx1 = ((r.left - canvasRect.left) / canvasRect.width) * CANVAS_WIDTH;
-        const by1 = ((r.top - canvasRect.top) / canvasRect.height) * CANVAS_HEIGHT;
-        const bx2 = bx1 + (r.width / canvasRect.width) * CANVAS_WIDTH;
-        const by2 = by1 + (r.height / canvasRect.height) * CANVAS_HEIGHT;
+        const bx1 = ((r.left - topBarRect.left) / topBarRect.width) * CANVAS_WIDTH;
+        const by1 = ((r.top - topBarRect.top) / topBarRect.height) * 80;
+        const bx2 = bx1 + (r.width / topBarRect.width) * CANVAS_WIDTH;
+        const by2 = by1 + (r.height / topBarRect.height) * 80;
         
         if (ix >= bx1 && ix <= bx2 && iy >= by1 && iy <= by2) {
             return btn.id;
@@ -1066,10 +1067,10 @@ function checkTopBarClick(ix, iy) {
     const swatches = document.querySelectorAll(".swatch");
     for (let sw of swatches) {
         const r = sw.getBoundingClientRect();
-        const bx1 = ((r.left - canvasRect.left) / canvasRect.width) * CANVAS_WIDTH;
-        const by1 = ((r.top - canvasRect.top) / canvasRect.height) * CANVAS_HEIGHT;
-        const bx2 = bx1 + (r.width / canvasRect.width) * CANVAS_WIDTH;
-        const by2 = by1 + (r.height / canvasRect.height) * CANVAS_HEIGHT;
+        const bx1 = ((r.left - topBarRect.left) / topBarRect.width) * CANVAS_WIDTH;
+        const by1 = ((r.top - topBarRect.top) / topBarRect.height) * 80;
+        const bx2 = bx1 + (r.width / topBarRect.width) * CANVAS_WIDTH;
+        const by2 = by1 + (r.height / topBarRect.height) * 80;
         
         if (ix >= bx1 && ix <= bx2 && iy >= by1 && iy <= by2) {
             return sw.dataset.colorName;
