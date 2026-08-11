@@ -147,7 +147,7 @@ function setEraserMode(active) {
 
 // --- Setup MediaPipe Hands ---
 const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
 hands.setOptions({
@@ -159,29 +159,71 @@ hands.setOptions({
 
 hands.onResults(onHandResults);
 
-// Start camera stream
-const camera = new Camera(videoElement, {
-    onFrame: async () => {
-        if (videoElement.currentTime > 0 && !videoElement.paused && !videoElement.ended && videoElement.readyState >= 2) {
-            try {
-                await hands.send({ image: videoElement });
-            } catch (err) {
-                console.warn("MediaPipe frame send error:", err);
-            }
-        }
-    },
-    width: 1280,
-    height: 720
-});
+function hideLoadingOverlay() {
+    if (!loadingOverlay) return;
+    loadingOverlay.style.opacity = "0";
+    setTimeout(() => {
+        loadingOverlay.style.display = "none";
+    }, 500);
+}
 
-camera.start().then(() => {
-    loadingOverlay.style.opacity = "0";
-    setTimeout(() => loadingOverlay.style.display = "none", 500);
-}).catch(err => {
-    console.error("Camera start error:", err);
-    loadingOverlay.style.opacity = "0";
-    setTimeout(() => loadingOverlay.style.display = "none", 500);
-});
+// Start camera stream with flexible resolution constraints to prevent OverconstrainedError on webcams/mobile
+async function initWebcam() {
+    let cameraStarted = false;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                facingMode: "user"
+            }
+        });
+        videoElement.srcObject = stream;
+        await videoElement.play();
+        cameraStarted = true;
+        hideLoadingOverlay();
+
+        async function processFrame() {
+            if (videoElement.currentTime > 0 && !videoElement.paused && !videoElement.ended && videoElement.readyState >= 2) {
+                try {
+                    await hands.send({ image: videoElement });
+                } catch (err) {
+                    console.warn("MediaPipe frame send error:", err);
+                }
+            }
+            requestAnimationFrame(processFrame);
+        }
+        requestAnimationFrame(processFrame);
+    } catch (err) {
+        console.warn("getUserMedia failed or denied, trying MediaPipe Camera fallback...", err);
+    }
+
+    if (!cameraStarted && typeof Camera !== "undefined") {
+        try {
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    if (videoElement.readyState >= 2) {
+                        try {
+                            await hands.send({ image: videoElement });
+                        } catch (err) {}
+                    }
+                },
+                width: 640,
+                height: 480
+            });
+            await camera.start();
+        } catch (err) {
+            console.error("MediaPipe camera fallback error:", err);
+        } finally {
+            hideLoadingOverlay();
+        }
+    } else if (!cameraStarted) {
+        hideLoadingOverlay();
+    }
+}
+
+initWebcam();
 
 // --- Helper Functions: Math & Geometry ---
 function distance(p1, p2) {
